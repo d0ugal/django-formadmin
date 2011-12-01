@@ -18,7 +18,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'django.contrib.messages'
+    'django.contrib.messages',
     'formadmin',
     'test_formadmin',
 )
@@ -36,3 +36,5 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'test_formadmin.urls'
+
+SITE_ID = 1
