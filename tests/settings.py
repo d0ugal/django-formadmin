@@ -9,12 +9,14 @@ COMPRESS_CACHE_BACKEND = 'locmem://'
 
 DATABASES = {
     'default': {
+        'NAME': os.path.join(TEST_DIR, 'test.db'),
         'ENGINE': 'django.db.backends.sqlite3',
     }
 }
 
 INSTALLED_APPS = (
     'django.contrib.auth',
+    'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',

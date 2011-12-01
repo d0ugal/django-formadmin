@@ -9,3 +9,4 @@ MANIFEST
 *.egg
 Vagrantfile
 tests/.tox/
+tests/test.db

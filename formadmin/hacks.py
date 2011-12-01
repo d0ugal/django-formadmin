@@ -43,7 +43,8 @@ def fake_model(data=None):
 
     return type('FakeModel', (BaseFakeModel,), {
         '_meta': fake_model_meta("formadmin"),
-    })()
+        '__name__': 'FakeModel',
+    })
 
 
 def fake_queryset(data):
