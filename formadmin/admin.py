@@ -14,27 +14,25 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 
-from formadmin.hacks import fake_model, fake_queryset
+from formadmin.hacks import fake_queryset, create_model_like_form
 
 csrf_protect_m = method_decorator(csrf_protect)
 
 
 class FormAdmin(ModelAdmin):
 
-    model = True
+    def __init__(self, original_form, admin_site):
 
-    def __init__(self, form, admin_site):
+        form_model = create_model_like_form(original_form, self)
 
-        self.form = form
-        self.model = fake_model()
-        form._meta = self.model._meta
-        form._meta.app_label = "formadmin"
-        form._meta.module_name = "emailform"
-        form._meta.verbose_name_plural = form.__name__
-        form._meta.verbose_name = form.__name__
-        self.opts = self.model._meta
+        self.form = form_model
+        self.model = form_model
+
+        self.opts = self.form._meta
         self.admin_site = admin_site
+
         self.inline_instances = []
+
         for inline_class in self.inlines:
             inline_instance = inline_class(self.model, self.admin_site)
             self.inline_instances.append(inline_instance)

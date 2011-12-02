@@ -5,13 +5,12 @@ from test_formadmin.forms import EmailForm, UploadForm
 
 
 class EmailFormAdmin(FormAdmin):
-    verbose_name = "Email Form"
-    verbose_name_plural = "Email Forms"
+    app_label = "Admin Forms"
+    verbose_name = "Email Staff"
 
 
 class UploadFormAdmin(FormAdmin):
-    pass
-
+    verbose_name = "Upload Logo"
 
 sites.register(EmailForm, EmailFormAdmin)
 sites.register(UploadForm, UploadFormAdmin)
