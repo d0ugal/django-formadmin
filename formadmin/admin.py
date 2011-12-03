@@ -25,17 +25,14 @@ class FormAdmin(ModelAdmin):
 
         form_model = create_model_like_form(original_form, self)
 
-        self.form = form_model
+        self.form = original_form
         self.model = form_model
 
-        self.opts = self.form._meta
+        self.opts = self.model._meta
         self.admin_site = admin_site
 
         self.inline_instances = []
 
-        for inline_class in self.inlines:
-            inline_instance = inline_class(self.model, self.admin_site)
-            self.inline_instances.append(inline_instance)
         if 'action_checkbox' not in self.list_display and self.actions is not None:
             self.list_display = ['action_checkbox'] + list(self.list_display)
         if not self.list_display_links:
@@ -57,11 +54,10 @@ class FormAdmin(ModelAdmin):
         return False
 
     def queryset(self, request):
-
         return self.get_column_data(request)
 
     def column_display(self):
-        return 1
+        return
 
     def get_changelist(self, request, **kwargs):
         """
@@ -71,10 +67,10 @@ class FormAdmin(ModelAdmin):
         return ChangeList
 
     def get_admin_choices(self, *args, **kwargs):
-        return [2, ]
+        return []
 
     def get_action_choices(self, *args, **kwargs):
-        return [3, ]
+        return []
 
     def get_column_data(self, request):
 
@@ -82,7 +78,7 @@ class FormAdmin(ModelAdmin):
 
     @csrf_protect_m
     def add2_view(self, request, form_url='', extra_context=None):
-        pass
+        return
 
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
@@ -151,9 +147,6 @@ class FormAdmin(ModelAdmin):
         model = self.model
         opts = model._meta
 
-        if not self.has_add_permission(request):
-            raise PermissionDenied
-
         ModelForm = self.get_form(request)
         formsets = []
         if request.method == 'POST':
@@ -164,21 +157,8 @@ class FormAdmin(ModelAdmin):
             else:
                 form_validated = False
                 new_object = self.model()
-            prefixes = {}
-            for FormSet, inline in zip(self.get_formsets(request), self.inline_instances):
-                prefix = FormSet.get_default_prefix()
-                prefixes[prefix] = prefixes.get(prefix, 0) + 1
-                if prefixes[prefix] != 1:
-                    prefix = "%s-%s" % (prefix, prefixes[prefix])
-                formset = FormSet(data=request.POST, files=request.FILES,
-                                  instance=new_object,
-                                  save_as_new="_saveasnew" in request.POST,
-                                  prefix=prefix, queryset=inline.queryset(request))
-                formsets.append(formset)
             if all_valid(formsets) and form_validated:
                 self.save_model(request, new_object, form, change=False)
-                for formset in formsets:
-                    self.save_formset(request, form, formset, change=False)
 
                 return self.response_add(request, new_object)
         else:
@@ -187,22 +167,10 @@ class FormAdmin(ModelAdmin):
             initial = dict(request.GET.items())
             for k in initial:
                 try:
-                    f = opts.get_field(k)
+                    opts.get_field(k)
                 except models.FieldDoesNotExist:
                     continue
-                if isinstance(f, models.ManyToManyField):
-                    initial[k] = initial[k].split(",")
             form = ModelForm(initial=initial)
-            prefixes = {}
-            for FormSet, inline in zip(self.get_formsets(request),
-                                       self.inline_instances):
-                prefix = FormSet.get_default_prefix()
-                prefixes[prefix] = prefixes.get(prefix, 0) + 1
-                if prefixes[prefix] != 1:
-                    prefix = "%s-%s" % (prefix, prefixes[prefix])
-                formset = FormSet(instance=self.model(), prefix=prefix,
-                                  queryset=inline.queryset(request))
-                formsets.append(formset)
 
         adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request)),
             self.prepopulated_fields, self.get_readonly_fields(request),
@@ -210,13 +178,6 @@ class FormAdmin(ModelAdmin):
         media = self.media + adminForm.media
 
         inline_admin_formsets = []
-        for inline, formset in zip(self.inline_instances, formsets):
-            fieldsets = list(inline.get_fieldsets(request))
-            readonly = list(inline.get_readonly_fields(request))
-            inline_admin_formset = helpers.InlineAdminFormSet(inline, formset,
-                fieldsets, readonly, model_admin=self)
-            inline_admin_formsets.append(inline_admin_formset)
-            media = media + inline_admin_formset.media
 
         context = {
             'title': _('Add %s') % force_unicode(opts.verbose_name),
@@ -236,7 +197,7 @@ class FormAdmin(ModelAdmin):
         """
         Determines the HttpResponse for the add_view stage.
         """
-        opts = obj._meta
+        opts = self.model._meta
 
         msg = _('%(name)s was submitted successfully.') % {
             'name': force_unicode(opts.verbose_name),
@@ -248,8 +209,5 @@ class FormAdmin(ModelAdmin):
 
         self.message_user(request, msg)
 
-        if self.has_change_permission(request, None):
-            post_url = '../'
-        else:
-            post_url = '../../../'
+        post_url = '../../'
         return HttpResponseRedirect(post_url)

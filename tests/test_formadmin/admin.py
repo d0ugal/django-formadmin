@@ -5,7 +5,7 @@ from test_formadmin.forms import EmailForm, UploadForm
 
 
 class EmailFormAdmin(FormAdmin):
-    app_label = "Admin Forms"
+    app_label = "AdminForms"
     verbose_name = "Email Staff"
 
 
