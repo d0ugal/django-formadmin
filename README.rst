@@ -1,7 +1,8 @@
 Django FormAdmin
 ========================================
 
-A way of adding non-ModelForms to the Django admin.
+FormAdmin is to Forms and ModelAdmin is to Models. In that, FormAdmin allows
+registering forms to the Django admin without them being related to a Model in
+any way.
 
-This is a very early prototype/proof of concept. Certainly not ready for use,
-it needs tests and documentation for a start.
+This is still a fairly early work in progress. But it works fairly well so far.
