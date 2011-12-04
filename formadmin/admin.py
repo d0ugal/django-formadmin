@@ -2,7 +2,6 @@ from django import template
 from django.contrib.admin import helpers
 from django.contrib.admin import ModelAdmin
 from django.contrib.admin.options import FORMFIELD_FOR_DBFIELD_DEFAULTS
-from django.core.exceptions import PermissionDenied
 from django.db import transaction, models
 from django.forms.formsets import all_valid
 from django.http import HttpResponseRedirect
@@ -76,10 +75,6 @@ class FormAdmin(ModelAdmin):
 
         return fake_queryset(self.column_data(request))
 
-    @csrf_protect_m
-    def add2_view(self, request, form_url='', extra_context=None):
-        return
-
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
 
@@ -91,9 +86,21 @@ class FormAdmin(ModelAdmin):
         info = self.model._meta.app_label, self.model._meta.module_name
 
         urlpatterns = patterns('',
+            url(r'^$',
+                wrap(self.changelist_view),
+                name='%s_%s_changelist' % info),
             url(r'^add/$',
                 wrap(self.add_view),
                 name='%s_%s_add' % info),
+            url(r'^(.+)/history/$',
+                wrap(self.history_view),
+                name='%s_%s_history' % info),
+            url(r'^(.+)/delete/$',
+                wrap(self.delete_view),
+                name='%s_%s_delete' % info),
+            url(r'^(.+)/$',
+                wrap(self.change_view),
+                name='%s_%s_change' % info),
         )
         return urlpatterns
 
@@ -118,7 +125,6 @@ class FormAdmin(ModelAdmin):
             'opts': opts,
             'save_as': self.save_as,
             'save_on_top': self.save_on_top,
-            'root_path': self.admin_site.root_path,
         })
         if add and self.add_form_template is not None:
             form_template = self.add_form_template
@@ -187,7 +193,6 @@ class FormAdmin(ModelAdmin):
             'media': mark_safe(media),
             'inline_admin_formsets': inline_admin_formsets,
             'errors': helpers.AdminErrorList(form, formsets),
-            'root_path': self.admin_site.root_path,
             'app_label': opts.app_label,
         }
         context.update(extra_context or {})
