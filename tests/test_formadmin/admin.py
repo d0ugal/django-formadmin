@@ -8,6 +8,9 @@ class EmailFormAdmin(FormAdmin):
     app_label = "AdminForms"
     verbose_name = "Email Staff"
 
+    def column_data(self, request):
+        return [{}, ]
+
 
 class UploadFormAdmin(FormAdmin):
     verbose_name = "Upload Logo"

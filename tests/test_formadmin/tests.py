@@ -69,6 +69,24 @@ class AdminTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Enter a valid e-mail address.")
 
+    def test_changelist(self):
+
+        paths = ['/admin/AdminForms/emailform/', '/admin/AdminForms/emailform/']
+
+        for path in paths:
+            r = self.client.get(path)
+
+            self.assertEqual(r.status_code, 200,
+                "'%s' loaded with status code %s when 200 was expected" % (
+                path, r.status_code))
+
+        path = '/admin/FormAdmin/uploadform/'
+
+        r = self.client.get(path)
+        self.assertEqual(r.status_code, 403,
+            "'%s' loaded with status code %s when 403 was expected" % (
+            path, r.status_code))
+
 
 class RegisterTestCase(TestCase):
 

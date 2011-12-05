@@ -47,7 +47,7 @@ class FormAdmin(ModelAdmin):
         return True
 
     def has_change_permission(self, *args, **kwargs):
-        return False
+        return hasattr(self, 'column_data')
 
     def has_delete_permission(self, *args, **kwargs):
         return False
@@ -80,6 +80,7 @@ class FormAdmin(ModelAdmin):
 
         def wrap(view):
             def wrapper(*args, **kwargs):
+                print args, kwargs
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
 

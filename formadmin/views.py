@@ -1,4 +1,3 @@
-from django.contrib.admin.filterspecs import FilterSpec
 from django.utils.http import urlencode
 
 from formadmin.hacks import fake_queryset
@@ -62,14 +61,8 @@ class ChangeList(object):
         self.pk_attname = "pk"  # self.lookup_opts.pk.attname
 
     def get_filters(self, request):
-        filter_specs = []
-        if self.list_filter:
-            filter_fields = [self.lookup_opts.get_field(field_name) for field_name in self.list_filter]
-            for f in filter_fields:
-                spec = FilterSpec.create(f, request, self.params, self.model, self.model_admin)
-                if spec and spec.has_output():
-                    filter_specs.append(spec)
-        return filter_specs, bool(filter_specs)
+        # Disable filters, not supported.
+        return [], False
 
     def get_query_string(self, new_params=None, remove=None):
         if new_params is None:
