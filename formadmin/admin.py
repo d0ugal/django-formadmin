@@ -1,8 +1,7 @@
 from django import template
 from django.contrib.admin import helpers
 from django.contrib.admin import ModelAdmin
-from django.contrib.admin.options import FORMFIELD_FOR_DBFIELD_DEFAULTS
-from django.db import transaction, models
+from django.db import models
 from django.forms.formsets import all_valid
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
@@ -13,7 +12,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.views.decorators.csrf import csrf_protect
 
-from formadmin.hacks import fake_queryset, create_model_like_form
+from formadmin.hacks import create_model_like_form
 
 csrf_protect_m = method_decorator(csrf_protect)
 
@@ -27,60 +26,22 @@ class FormAdmin(ModelAdmin):
         self.form = original_form
         self.model = form_model
 
-        self.opts = self.model._meta
         self.admin_site = admin_site
-
-        self.inline_instances = []
-
-        if 'action_checkbox' not in self.list_display and self.actions is not None:
-            self.list_display = ['action_checkbox'] + list(self.list_display)
-        if not self.list_display_links:
-            for name in self.list_display:
-                if name != 'action_checkbox':
-                    self.list_display_links = [name]
-                    break
-        overrides = FORMFIELD_FOR_DBFIELD_DEFAULTS.copy()
-        overrides.update(self.formfield_overrides)
-        self.formfield_overrides = overrides
 
     def has_add_permission(self, *args, **kwargs):
         return True
 
     def has_change_permission(self, *args, **kwargs):
-        return hasattr(self, 'column_data')
+        return False
 
     def has_delete_permission(self, *args, **kwargs):
         return False
-
-    def queryset(self, request):
-        return self.get_column_data(request)
-
-    def column_display(self):
-        return
-
-    def get_changelist(self, request, **kwargs):
-        """
-        Returns the ChangeList class for use on the changelist page.
-        """
-        from formadmin.views import ChangeList
-        return ChangeList
-
-    def get_admin_choices(self, *args, **kwargs):
-        return []
-
-    def get_action_choices(self, *args, **kwargs):
-        return []
-
-    def get_column_data(self, request):
-
-        return fake_queryset(self.column_data(request))
 
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
-                print args, kwargs
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
 
@@ -88,20 +49,13 @@ class FormAdmin(ModelAdmin):
 
         urlpatterns = patterns('',
             url(r'^$',
-                wrap(self.changelist_view),
-                name='%s_%s_changelist' % info),
-            url(r'^add/$',
                 wrap(self.add_view),
-                name='%s_%s_add' % info),
-            url(r'^(.+)/history/$',
-                wrap(self.history_view),
-                name='%s_%s_history' % info),
-            url(r'^(.+)/delete/$',
-                wrap(self.delete_view),
-                name='%s_%s_delete' % info),
-            url(r'^(.+)/$',
-                wrap(self.change_view),
-                name='%s_%s_change' % info),
+                name='%s_%s_add' % info,),
+
+            # A changelist view name is expected, just give add path again.
+            url(r'^$',
+                wrap(self.add_view),
+                name='%s_%s_changelist' % info,),
         )
         return urlpatterns
 
@@ -127,10 +81,7 @@ class FormAdmin(ModelAdmin):
             'save_as': self.save_as,
             'save_on_top': self.save_on_top,
         })
-        if add and self.add_form_template is not None:
-            form_template = self.add_form_template
-        else:
-            form_template = self.change_form_template
+        form_template = self.add_form_template
         context_instance = template.RequestContext(request, current_app=self.admin_site.name)
         return render_to_response(form_template or [
             "admin/%s/%s/change_form.html" % (app_label, opts.object_name.lower()),
@@ -148,26 +99,24 @@ class FormAdmin(ModelAdmin):
         pass
 
     @csrf_protect_m
-    @transaction.commit_on_success
     def add_view(self, request, form_url='', extra_context=None):
-        "The 'add' admin view for this model."
+
         model = self.model
         opts = model._meta
 
-        ModelForm = self.get_form(request)
+        Form = self.get_form(request)
         formsets = []
         if request.method == 'POST':
-            form = ModelForm(request.POST, request.FILES)
+            form = Form(request.POST, request.FILES)
             if form.is_valid():
-                new_object = self.save_form(request, form, change=False)
+                self.save_form(request, form, change=False)
                 form_validated = True
             else:
                 form_validated = False
-                new_object = self.model()
-            if all_valid(formsets) and form_validated:
-                self.save_model(request, new_object, form, change=False)
+                self.model()
+            if form_validated:
+                return self.response_add(request, form)
 
-                return self.response_add(request, new_object)
         else:
             # Prepare the dict of initial data from the request.
             # We have to special-case M2Ms as a list of comma-separated PKs.
@@ -177,7 +126,7 @@ class FormAdmin(ModelAdmin):
                     opts.get_field(k)
                 except models.FieldDoesNotExist:
                     continue
-            form = ModelForm(initial=initial)
+            form = Form(initial=initial)
 
         adminForm = helpers.AdminForm(form, list(self.get_fieldsets(request)),
             self.prepopulated_fields, self.get_readonly_fields(request),

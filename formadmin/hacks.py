@@ -1,26 +1,6 @@
 from django.db.models.options import Options
-from django.db.models.query import EmptyQuerySet
 
 from formadmin import settings
-
-
-class BaseFakeQuerySet(EmptyQuerySet):
-
-    def __init__(self, data):
-        self._result_cache = []
-        self._iter = False
-
-
-def fake_queryset(data):
-
-    class Meta:
-        pass
-
-    data = list(data)
-
-    return type("FakeQuerySet", (BaseFakeQuerySet,), {
-        '_meta': Options(Meta),
-    })(data)
 
 
 def create_model_like_form(original_form, formadmin=None):

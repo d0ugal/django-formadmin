@@ -1,4 +1,5 @@
 from django.utils.http import urlencode
+from django.contrib.admin.views.main import ChangeList as BaseChangelist
 
 from formadmin.hacks import fake_queryset
 
@@ -20,45 +21,14 @@ ERROR_FLAG = 'e'
 EMPTY_CHANGELIST_VALUE = '(None)'
 
 
-class ChangeList(object):
-    def __init__(self, request, model, list_display, list_display_links, list_filter, date_hierarchy, search_fields, list_select_related, list_per_page, list_editable, model_admin):
-        self.model = model
-        self.opts = model._meta
-        self.lookup_opts = self.opts
-        self.root_query_set = model_admin.queryset(request)
-        self.list_display = list_display
-        self.list_display_links = list_display_links
-        self.list_filter = list_filter
-        self.date_hierarchy = date_hierarchy
-        self.search_fields = search_fields
-        self.list_select_related = list_select_related
-        self.list_per_page = list_per_page
-        self.list_editable = list_editable
-        self.model_admin = model_admin
+class ChangeList(BaseChangelist):
 
-        # Get search parameters from the query string.
+    def __init__(self, *args, **kwargs):
+
         try:
-            self.page_num = int(request.GET.get(PAGE_VAR, 0))
-        except ValueError:
-            self.page_num = 0
-        self.show_all = ALL_VAR in request.GET
-        self.is_popup = IS_POPUP_VAR in request.GET
-        self.to_field = request.GET.get(TO_FIELD_VAR)
-        self.params = dict(request.GET.items())
-        if PAGE_VAR in self.params:
-            del self.params[PAGE_VAR]
-        if TO_FIELD_VAR in self.params:
-            del self.params[TO_FIELD_VAR]
-        if ERROR_FLAG in self.params:
-            del self.params[ERROR_FLAG]
-
-        self.order_field, self.order_type = self.get_ordering()
-        self.query = request.GET.get(SEARCH_VAR, '')
-        self.query_set = self.get_query_set()
-        self.get_results(request)
-        self.title = "test"  # (selt.is_popup and ugettext('Select %s') % force_unicode(self.opts.verbose_name) or ugettext('Select %s to change') % force_unicode(self.opts.verbose_name))
-        self.filter_specs, self.has_filters = self.get_filters(request)
-        self.pk_attname = "pk"  # self.lookup_opts.pk.attname
+            super(ChangeList, self).__init__(*args, **kwargs)
+        except Exception as e:
+            print e
 
     def get_filters(self, request):
         # Disable filters, not supported.
@@ -93,7 +63,7 @@ class ChangeList(object):
         self.multi_page = False
         self.paginator = True
 
-    def get_ordering(self):
+    def get_ordering(self, *args, **kwargs):
         return 'order_field', 'asc'
 
     def get_query_set(self, *args, **kwargs):

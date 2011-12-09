@@ -27,9 +27,9 @@ class AdminTestCase(TestCase):
 
     def test_form_render(self):
 
-        for path in ['/admin/AdminForms/emailform/add/',
-                '/admin/AdminForms/emailform/add/?email=test',
-                '/admin/FormAdmin/uploadform/add/']:
+        for path in ['/admin/AdminForms/emailform/',
+                '/admin/AdminForms/emailform/?email=test',
+                '/admin/FormAdmin/uploadform/']:
 
             r = self.client.get(path)
 
@@ -38,17 +38,17 @@ class AdminTestCase(TestCase):
 
     def test_email_form(self):
 
-        r = self.client.post("/admin/AdminForms/emailform/add/", {
+        r = self.client.post("/admin/AdminForms/emailform/", {
             'email': 'testing_email@test.com'
         }, follow=True)
 
         self.assertEqual(len(r.redirect_chain), 1)
         self.assertEqual(r.status_code, 200)
         last_path, last_status_code = r.redirect_chain[-1]
-        self.assertTrue(last_path.endswith('/admin/AdminForms/'),
+        self.assertTrue(last_path.endswith('/admin/'),
             "%s didn't end with /admin/AdminForms/" % last_path)
 
-        r = self.client.post("/admin/AdminForms/emailform/add/", {
+        r = self.client.post("/admin/AdminForms/emailform/", {
             'email': 'testing_email2@test.com',
             '_addanother': '1',
         }, follow=True)
@@ -56,36 +56,18 @@ class AdminTestCase(TestCase):
         self.assertEqual(len(r.redirect_chain), 1)
         self.assertEqual(r.status_code, 200)
         last_path, last_status_code = r.redirect_chain[-1]
-        self.assertTrue(last_path.endswith('/admin/AdminForms/emailform/add/'),
-            "%s didn't end with /admin/AdminForms/emailform/add/" % last_path)
+        self.assertTrue(last_path.endswith('/admin/AdminForms/emailform/'),
+            "%s didn't end with /admin/AdminForms/emailform/" % last_path)
 
     def test_email_form_errors(self):
 
-        r = self.client.post("/admin/AdminForms/emailform/add/", {
+        r = self.client.post("/admin/AdminForms/emailform/", {
             'email': '?',
         }, follow=True)
 
         self.assertEqual(len(r.redirect_chain), 0)
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Enter a valid e-mail address.")
-
-    def test_changelist(self):
-
-        paths = ['/admin/AdminForms/emailform/', '/admin/AdminForms/emailform/']
-
-        for path in paths:
-            r = self.client.get(path)
-
-            self.assertEqual(r.status_code, 200,
-                "'%s' loaded with status code %s when 200 was expected" % (
-                path, r.status_code))
-
-        path = '/admin/FormAdmin/uploadform/'
-
-        r = self.client.get(path)
-        self.assertEqual(r.status_code, 403,
-            "'%s' loaded with status code %s when 403 was expected" % (
-            path, r.status_code))
 
 
 class RegisterTestCase(TestCase):
