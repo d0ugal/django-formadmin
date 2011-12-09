@@ -127,6 +127,5 @@ setup(
     zip_safe=False,
     setup_requires=[
         'versiontools >= 1.6',
-        'django >= 1.3',
     ],
 )
